@@ -1,7 +1,7 @@
 import math
 import plotly.express as px
 import pandas as pd
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, root_mean_squared_error
 from tqdm.notebook import tqdm
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -72,9 +72,11 @@ class EvaluationDataset:
         size = len(self.err_df['aggregate error'])
         average_error = sum(self.err_df['aggregate error']) / size
         mse = mean_squared_error(self.truths, self.guesses)
+        rmse = root_mean_squared_error(self.truths, self.guesses)
         r2 = r2_score(self.truths, self.guesses) * 100
         self.title = (f"{self.title} results<br><b>Error:</b> {average_error:,.3f}   "
-                      f"<b>MSE:</b> {mse:,.3f}   <b>r²:</b> {r2:.2f}%")
+                      f"<b>MSE:</b> {mse:,.3f}   <b>r²:</b> {r2:.2f}%    "
+                      f"<b>RMSE:</b> {rmse:.3f}")
 
         return self.err_df
 
