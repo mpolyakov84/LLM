@@ -28,6 +28,30 @@ class EvaluationDataset:
     def make_title(predictor) -> str:
         return predictor.__name__.replace("__", ".").replace("_", " ").title().replace("Gpt", "GPT")
 
+    def intersection_area(self,box1,box2):
+        dx = abs(box1['x_center']-box2['x_center'])
+        dy = abs(box1['y_center']-box2['y_center'])
+        dw = abs(box1['width']+box2['width'])/2
+        dh = abs(box1['height']+box2['height'])/2
+
+        if dx >= dw or dy >= dh:
+            return 0
+        else:
+            x_cross = dw-dx
+            y_cross = dh-dy
+            return x_cross*y_cross
+
+    def union_area(self,box1,box2):
+        mutual_square = box1['width']*box1['height']+box2['width']*box2['height']
+        intersection = self.intersection_area(box1,box2)
+        union = mutual_square - intersection
+        return union
+
+    def IoU(self,box1,box2):
+        intersection = self.intersection_area(box1,box2)
+        union = self.union_area(box1,box2)
+        return intersection/union
+
     def compare(self):
         """
         Compares prediction model with test dataset
@@ -42,6 +66,8 @@ class EvaluationDataset:
             we = abs(model_result['y_center'] - item['y_center'])
             h_sum = (model_result['height'] + item['height'])/2
             w_sum = (model_result['width'] + item['width'])/2
+
+            item_IoU = self.IoU(model_result, item)
 
             if he < h_sum and we < w_sum:
                 color = 'green'
@@ -64,17 +90,19 @@ class EvaluationDataset:
             )
 
             self.dict_lst.append({'aggregate error': diff_err, 'color': color, 'width': w_sum,
-                                  'height': h_sum, 'diff_center': diff_center})
+                                  'height': h_sum, 'diff_center': diff_center, 'IoU': item_IoU})
 
         self.err_df = pd.DataFrame(self.dict_lst)
 
         # aggregate error
         size = len(self.err_df['aggregate error'])
         average_error = sum(self.err_df['aggregate error']) / size
+        average_IoU = sum(self.err_df['IoU']) / size
         mse = mean_squared_error(self.truths, self.guesses)
         rmse = root_mean_squared_error(self.truths, self.guesses)
         r2 = r2_score(self.truths, self.guesses) * 100
-        self.title = (f"{self.title} results<br><b>Error:</b> {average_error:,.3f}   "
+        self.title = (f"{self.title} results:   "
+                      f"<b>IoU:</b> {average_IoU:,.3f}<br>"
                       f"<b>MSE:</b> {mse:,.3f}   <b>r²:</b> {r2:.2f}%    "
                       f"<b>RMSE:</b> {rmse:.3f}")
 
