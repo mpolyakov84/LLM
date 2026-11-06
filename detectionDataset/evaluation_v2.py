@@ -222,6 +222,8 @@ class EvaluationDataset:
         self.chart()
         self.chart_err()
 
+        print(self.title)
+
 
 def evaluate_model(model_func, test_dataset, cls=False):
     tester = EvaluationDataset(model_func, test_dataset, cls)
